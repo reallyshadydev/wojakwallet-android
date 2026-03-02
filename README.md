@@ -1,4 +1,4 @@
-# Wojakcoin Wallet
+# Wojakcoinwallet
 
 A self-custodial Wojakcoin (WJK) wallet UI with Electrs API integration.
 
@@ -9,6 +9,10 @@ A self-custodial Wojakcoin (WJK) wallet UI with Electrs API integration.
 - **[reallyshadydev](https://github.com/reallyshadydev)** — maintainer
 
 See [CONTRIBUTORS.md](./CONTRIBUTORS.md) for the full list.
+
+## Releases
+
+Pre-built **Android** (APK) and **iOS** (App bundle) are attached to [GitHub Releases](https://github.com/reallyshadydev/wojakcoinwallet/releases). The iOS app is built by the **Build iOS** workflow on push to `main` and added to the latest release.
 
 ## Setup
 
@@ -52,4 +56,15 @@ npm install --legacy-peer-deps
 # Set NEXT_PUBLIC_ELECTRS_API_URL in .env.local to a public Electrs URL
 npm run build:android
 npm run open:android
+```
+
+## iOS
+
+**iOS** is also supported (requires macOS with Xcode). See **[IOS.md](./IOS.md)** for setup and build steps. Quick path on a Mac:
+
+```bash
+npm install --legacy-peer-deps
+npm run build:ios
+cd ios/App && pod install && cd ../..
+npm run open:ios
 ```

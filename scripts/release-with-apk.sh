@@ -1,6 +1,7 @@
 #!/bin/bash
 # Push main + tag and create a GitHub release with the APK.
-# Prereqs: repo https://github.com/reallyshadydev/wojakwallet-android exists,
+# iOS app is added to the same release by the Build iOS workflow (runs on push to main).
+# Prereqs: repo https://github.com/reallyshadydev/wojakcoinwallet exists,
 #          and you're authenticated (gh auth login or GITHUB_TOKEN, or git credential helper).
 set -e
 cd "$(dirname "$0")"
@@ -18,6 +19,6 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
   gh release create "$TAG" "$APK" --title "Release $TAG" --notes "WojakCoin Wallet Android. Install the APK on your device."
 else
   echo "gh not authenticated. Create the release manually:"
-  echo "  1. Go to https://github.com/reallyshadydev/wojakwallet-android/releases/new"
+  echo "  1. Go to https://github.com/reallyshadydev/wojakcoinwallet/releases/new"
   echo "  2. Choose tag $TAG, title 'Release $TAG', attach: $APK"
 fi

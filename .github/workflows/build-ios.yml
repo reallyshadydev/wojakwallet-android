@@ -67,3 +67,36 @@ jobs:
         with:
           name: ios-app-${{ github.run_number }}
           path: build/ios/App.app
+
+      - name: Zip app for release
+        run: |
+          cd build/ios && zip -r ../Wojakcoinwallet-iOS.app.zip App.app && cd ../..
+
+      - name: Add iOS app to release v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          TAG="v1.0.0"
+          ASSET="build/Wojakcoinwallet-iOS.app.zip"
+          RELEASE_ID=$(curl -sS -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${REPO}/releases/tags/${TAG}" | jq -r '.id // empty')
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Release $TAG not found; skipping upload to release."
+            exit 0
+          fi
+          UPLOAD_URL=$(curl -sS -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${REPO}/releases/${RELEASE_ID}" | jq -r '.upload_url')
+          UPLOAD_URL="${UPLOAD_URL%\{*}"
+          HTTP=$(curl -sS -w "%{http_code}" -o /tmp/upload.out -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@${ASSET}" \
+            "${UPLOAD_URL}?name=Wojakcoinwallet-iOS.app.zip")
+          if [ "$HTTP" = "201" ]; then
+            echo "Uploaded iOS app to release $TAG"
+          elif [ "$HTTP" = "422" ]; then
+            echo "Release already has this asset (422); skipping."
+          else
+            echo "Upload failed: HTTP $HTTP" && cat /tmp/upload.out && exit 1
+          fi
