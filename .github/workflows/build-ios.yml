@@ -1,0 +1,69 @@
+# Build iOS app on macOS runner; upload .app as artifact.
+# Run manually (workflow_dispatch) or on push to main.
+
+name: Build iOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync to iOS
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          cd ios/App && pod install && cd ../..
+
+      - name: Build iOS app
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Locate and copy built app
+        id: app
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -name "App.app" -path "*/Build/Products/Release-iphoneos/*" 2>/dev/null | head -1)
+          if [ -z "$APP" ]; then
+            APP=$(find ios/App -name "App.app" -path "*Release*" 2>/dev/null | head -1)
+          fi
+          if [ -z "$APP" ]; then
+            echo "App.app not found"
+            exit 1
+          fi
+          mkdir -p build/ios
+          cp -R "$APP" build/ios/
+          echo "app_path=build/ios/App.app" >> $GITHUB_OUTPUT
+
+      - name: Upload App artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-${{ github.run_number }}
+          path: build/ios/App.app
